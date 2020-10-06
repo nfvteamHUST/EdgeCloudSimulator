@@ -1,0 +1,23 @@
+package fil.resource.virtual;
+
+public class Density extends Service {
+	public Density(String sfcID, int piBelong) {
+		this.setSfcID(sfcID);
+		this.setPiBelong(piBelong);
+		this.setServiceType("density");
+		this.setCpu_pi(13.6); //CPU usage when running on Pi
+		this.setCpu_server(6.5);; //CPU usage when running on server
+		this.setBelongToEdge(true);
+		this.setBandwidth(0.6);
+		this.setPower(0.13);
+	}
+	public Density() {
+		this.setServiceType("density");
+		this.setCpu_pi(13.6); //CPU usage when running on Pi
+
+		this.setCpu_server(6.5);; //CPU usage when running on server
+		this.setBelongToEdge(true);
+		this.setBandwidth(0.6);
+		this.setPower(0.13);
+	}
+}
