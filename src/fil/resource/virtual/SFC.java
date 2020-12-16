@@ -5,11 +5,10 @@ import java.util.LinkedList;
 
 import fil.resource.substrate.PhysicalServer;
 
-@SuppressWarnings("serial")
-public class SFC implements java.io.Serializable{
+public class SFC {
 	private ArrayList<Boolean> servicePosition;
 	private int piBelong;
-	private String sfcID;
+	private int sfcID;
 	private double totalChainCpu;
 	private double totalChainBandwidth;
 	private double startTime;
@@ -17,16 +16,17 @@ public class SFC implements java.io.Serializable{
 	private Capture capture;
 	private Decode decode ;
 	private Density density;
-	private ReceiveDensity receive;
+	private Receive receive;
 	private boolean separateService;
 	private LinkedList<VirtualLink> vLink;
+	private LinkedList<Service> listService;
 	
-	public SFC(String sfcID, int piBelong, double  endTime) {
+	public SFC(int sfcID, int piBelong, double  endTime) {
 		servicePosition = new ArrayList<Boolean>();
 		capture = new Capture(sfcID, piBelong);
 		decode = new Decode(sfcID, piBelong);
 		density = new Density(sfcID, piBelong);
-		receive = new ReceiveDensity(sfcID, piBelong);
+		receive = new Receive(sfcID, piBelong);
 		totalChainBandwidth = 0;
 		this.setSeparateService(false);
 		this.setPiBelong(piBelong);
@@ -41,7 +41,7 @@ public class SFC implements java.io.Serializable{
 		capture = new Capture(copySFC.getSfcID(), copySFC.getPiBelong());
 		decode = new Decode(copySFC.getSfcID(), copySFC.getPiBelong());
 		density = new Density(copySFC.getSfcID(), copySFC.getPiBelong());
-		receive = new ReceiveDensity(copySFC.getSfcID(), copySFC.getPiBelong());
+		receive = new Receive(copySFC.getSfcID(), copySFC.getPiBelong());
 		totalChainBandwidth = 0;
 		this.setPiBelong(copySFC.getPiBelong());
 		this.setSfcID(copySFC.getSfcID());
@@ -55,8 +55,7 @@ public class SFC implements java.io.Serializable{
 		return servicePosition;
 	}
 	
-	public void setServicePosition (Service service, boolean position) {
-		String type = service.getServiceType();
+	public void setServicePosition (String type, boolean position) {
 		switch(type) {
 		case "capture": this.capture.setBelongToEdge(position);servicePosition.add(position);break;
 		case "decode": this.decode.setBelongToEdge(position);servicePosition.add(position);break;
@@ -184,11 +183,11 @@ public class SFC implements java.io.Serializable{
 		this.piBelong = piBelong;
 	}
 
-	public String getSfcID() {
+	public int getSfcID() {
 		return sfcID;
 	}
 
-	public void setSfcID(String sfcID) {
+	public void setSfcID(int sfcID) {
 		this.sfcID = sfcID;
 	}
 	
@@ -330,5 +329,63 @@ public class SFC implements java.io.Serializable{
 	}
 	public void setStartTime(double startTime) {
 		this.startTime = startTime;
+	}
+	public Capture getCapture() {
+		return capture;
+	}
+	public void setCapture(Capture capture) {
+		this.capture = capture;
+	}
+	public Decode getDecode() {
+		return decode;
+	}
+	public void setDecode(Decode decode) {
+		this.decode = decode;
+	}
+	public Density getDensity() {
+		return density;
+	}
+	public void setDensity(Density density) {
+		this.density = density;
+	}
+	public Receive getReceive() {
+		return receive;
+	}
+	public void setReceive(Service service) {
+		this.receive = (Receive) service;
+	}
+	public LinkedList<Service> getListService() {
+		LinkedList<Service> listService = new LinkedList<>();
+		listService.add(this.getCapture());
+		listService.add(this.getDecode());
+		listService.add(this.getDensity());
+		listService.add(this.getReceive());
+		return listService;
+	}
+	public void setListService(LinkedList<Service> listService) {
+		this.listService = listService;
+	}
+	
+	public LinkedList<Service> getListServiceCloud() {
+		LinkedList<Service> listService = new LinkedList<>();
+		for(Service service : this.getListService()) {
+			if(!service.isBelongToEdge())
+				listService.add(service);
+		}
+		return listService;
+	}
+	
+	public void setService(Service service) {
+		switch(service.getServiceType()) {
+		case "decode":
+			this.setDecode((Decode) service);
+			break;
+		case "density":
+			this.setDensity((Density) service);
+			break;
+		case "receive":
+			this.setReceive((Receive) service);
+			break;
+		}
 	}
 }

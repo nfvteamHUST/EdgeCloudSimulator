@@ -24,13 +24,13 @@ public class ServiceMapping {
 	
 	public LinkedList<SFC> run(LinkedList<SFC> listSFC, Topology topo) {
 		
-		Map<Integer, PhysicalServer> listPhysical = topo.getListPhyServers();  //get list physical server
+//		Map<Integer, PhysicalServer> listPhysical = topo.getListPhyServers();  //get list physical server
 		LinkedList<SFC> listMappedSFC = new LinkedList<>(); 
 
-		LinkedList<PhysicalServer> listServer = new LinkedList<>();
-		for(PhysicalServer phy : listPhysical.values()) {
-			listServer.add(phy);
-		}
+		LinkedList<PhysicalServer> listServer = topo.getListPhyServers();
+//		for(PhysicalServer phy : listPhysical.values()) {
+//			listServer.add(phy);
+//		}
 		//====Start First-Fit algorithm to map VNF into physical server ===========//
 		sfc_loop:
 		for(SFC sfc : listSFC) {
@@ -291,8 +291,8 @@ public boolean remappingAggrFarGroup(VirtualLink vLink, Topology topo) {
 
 	public double getPowerServer(Topology topo) {
 		double power = 0;
-		Map<Integer, PhysicalServer> listPhysical = topo.getListPhyServers(); 
-		for(PhysicalServer phy : listPhysical.values()) {
+		LinkedList<PhysicalServer> listPhysical = topo.getListPhyServers(); 
+		for(PhysicalServer phy : listPhysical) {
 			if(phy.getState() == 1) {
 				phy.setPowerServer();
 				power += phy.getPowerServer();;

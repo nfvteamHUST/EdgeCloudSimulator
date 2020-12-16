@@ -3,6 +3,7 @@ package fil.resource.substrate;
 import java.util.LinkedList;
 
 import fil.resource.virtual.SFC;
+import fil.resource.virtual.Service;
 
 public class PhysicalServer {
 	final double CPU = 100; //100%
@@ -13,14 +14,15 @@ public class PhysicalServer {
 	private int state ; // state =0:  off, state=1:  on
 	private LinkedList<SFC> listSFCInServer;
 	private LinkedList<SFC> listIndependRev;
+	private LinkedList<Service> listService;
 	
 	public PhysicalServer() {
 		this.remainCPU = CPU;
 		this.usedCPUServer = 0;
-		this.setUsedCPUServer(0);
 		this.powerServer = 0;
-		this.setListSFCInServer(new LinkedList<>());
-		this.setListIndependRev(new LinkedList<>());
+		this.listSFCInServer = new LinkedList<>();
+		this.listIndependRev = new LinkedList<>();
+		this.listService = new LinkedList<>();
 //		this.ram = RAM;
 //		this.name=name;
 		//this.listService = new LinkedList<>();
@@ -28,11 +30,11 @@ public class PhysicalServer {
 	public PhysicalServer(String name) {
 		this.remainCPU = CPU;
 		this.usedCPUServer = 0;
-		this.setUsedCPUServer(0);
 		this.powerServer = 0;
-		this.name=name;
-		this.setListSFCInServer(new LinkedList<>());
-		this.setListIndependRev(new LinkedList<>());
+		this.listSFCInServer = new LinkedList<>();
+		this.listIndependRev = new LinkedList<>();
+		this.listService = new LinkedList<>();
+		this.name = name;
 	}
 
 	
@@ -130,5 +132,11 @@ public class PhysicalServer {
 	}
 	public void setListIndependRev(LinkedList<SFC> listIndependRev) {
 		this.listIndependRev = listIndependRev;
+	}
+	public LinkedList<Service> getListService() {
+		return listService;
+	}
+	public void setListService(LinkedList<Service> listService) {
+		this.listService = listService;
 	}
 }

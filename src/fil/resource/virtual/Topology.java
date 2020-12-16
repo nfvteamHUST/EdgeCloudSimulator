@@ -13,6 +13,7 @@ import java.util.stream.Collectors;
 
 import fil.resource.substrate.LinkPhyEdge;
 import fil.resource.substrate.PhysicalServer;
+import fil.resource.substrate.Rpi;
 import fil.resource.substrate.SubstrateLink;
 import fil.resource.substrate.SubstrateSwitch;
 
@@ -27,10 +28,11 @@ import static java.util.Map.Entry.*;
 public class Topology  {
 	private Map<SubstrateSwitch, LinkedList<SubstrateSwitch>> map;
 	private LinkedList<SubstrateLink> linkBandwidth; // bandwidth of all links
-	private Map<Integer, PhysicalServer> listPhyServers;
+	private LinkedList<PhysicalServer> listPhyServers;
 	private LinkedList<LinkPhyEdge> listLinkPhyEdge; // bandwidth of all Phy->Edge switch link
 	private LinkedList<SubstrateSwitch> listSwitch;
 	private LinkedList<SubstrateSwitch> listSwitchUsed;
+	private LinkedList<Rpi> listRpi;
 	
 	
 	//for link mapping
@@ -50,7 +52,7 @@ public class Topology  {
 	 */
 	public Topology() {
 		map = new HashMap<>();
-		listPhyServers = new HashMap<>();
+		listPhyServers = new LinkedList<>();
 		linkBandwidth = new LinkedList<>();
 		listLinkPhyEdge = new LinkedList<>();
 		listSwitch = new LinkedList<>();
@@ -63,27 +65,28 @@ public class Topology  {
 		listCoreSwitch = new HashMap<>();
 		listEdgeSwitch = new HashMap<>();
 		listSwitchUsed = new LinkedList<>();
+		listRpi = new LinkedList<>();
 	}
-	public Topology(Map<SubstrateSwitch, LinkedList<SubstrateSwitch>> mapInput, LinkedList<SubstrateLink> linkBandwidthInput, Map<PhysicalServer, 
-			SubstrateSwitch> listLinksServerInput, Map<Integer, PhysicalServer> listPhyServersInput, LinkedList<LinkPhyEdge> listLinkPhyEdgeInput, 
-			LinkedList<SubstrateSwitch> listSwitchInput, Map<SubstrateSwitch, LinkedList<SubstrateSwitch>> listAggConnectEdgeInput, Map<SubstrateSwitch, LinkedList<SubstrateSwitch>> listCoreConnectAggInput
-			, Map<Integer, LinkedList<SubstrateSwitch>> listEdgeSwitchInPodInput, Map<Integer, LinkedList<SubstrateSwitch>> listAggSwitchInPodInput, LinkedList<SubstrateSwitch> listPhySwitchInput
-			, Map<Integer, SubstrateSwitch> listAggSwitchInput, Map<Integer, SubstrateSwitch> listCoreSwitchInput, Map<Integer, SubstrateSwitch> listEdgeSwitchInput)
-	{
-		map = mapInput;
-		listPhyServers = listPhyServersInput;
-		linkBandwidth = linkBandwidthInput;
-		listLinkPhyEdge = listLinkPhyEdgeInput;
-		listSwitch =listSwitchInput;
-		listAggConnectEdge = listAggConnectEdgeInput;
-		listCoreConnectAgg = listCoreConnectAggInput;
-		listEdgeSwitchInPod = listEdgeSwitchInPodInput;
-		listAggSwitchInPod = listAggSwitchInPodInput;
-		listPhySwitch = listPhySwitchInput;
-		listAggSwitch = listAggSwitchInput;
-		listCoreSwitch = listCoreSwitchInput;
-		listEdgeSwitch = listEdgeSwitchInput;
-	}
+//	public Topology(Map<SubstrateSwitch, LinkedList<SubstrateSwitch>> mapInput, LinkedList<SubstrateLink> linkBandwidthInput, Map<PhysicalServer, 
+//			SubstrateSwitch> listLinksServerInput,LinkedList<PhysicalServer> listPhyServersInput, LinkedList<LinkPhyEdge> listLinkPhyEdgeInput, 
+//			LinkedList<SubstrateSwitch> listSwitchInput, Map<SubstrateSwitch, LinkedList<SubstrateSwitch>> listAggConnectEdgeInput, Map<SubstrateSwitch, LinkedList<SubstrateSwitch>> listCoreConnectAggInput
+//			, Map<Integer, LinkedList<SubstrateSwitch>> listEdgeSwitchInPodInput, Map<Integer, LinkedList<SubstrateSwitch>> listAggSwitchInPodInput, LinkedList<SubstrateSwitch> listPhySwitchInput
+//			, Map<Integer, SubstrateSwitch> listAggSwitchInput, Map<Integer, SubstrateSwitch> listCoreSwitchInput, Map<Integer, SubstrateSwitch> listEdgeSwitchInput)
+//	{
+//		map = mapInput;
+//		listPhyServers = listPhyServersInput;
+//		linkBandwidth = linkBandwidthInput;
+//		listLinkPhyEdge = listLinkPhyEdgeInput;
+//		listSwitch =listSwitchInput;
+//		listAggConnectEdge = listAggConnectEdgeInput;
+//		listCoreConnectAgg = listCoreConnectAggInput;
+//		listEdgeSwitchInPod = listEdgeSwitchInPodInput;
+//		listAggSwitchInPod = listAggSwitchInPodInput;
+//		listPhySwitch = listPhySwitchInput;
+//		listAggSwitch = listAggSwitchInput;
+//		listCoreSwitch = listCoreSwitchInput;
+//		listEdgeSwitch = listEdgeSwitchInput;
+//	}
 	
 	
 	public void addEdge(SubstrateSwitch node1, SubstrateSwitch node2, double bandwidth) {
@@ -107,8 +110,8 @@ public class Topology  {
 	public void addPhysicalServer(SubstrateSwitch edgeSwitch, PhysicalServer physicalServer, double bandwidth) {
 		//1: up, 0:down
 		listLinkPhyEdge.add(new LinkPhyEdge(physicalServer, edgeSwitch, bandwidth));
-		if(!listPhyServers.containsValue(physicalServer))
-			listPhyServers.put(Integer.parseInt(physicalServer.getName()), physicalServer);
+		if(!listPhyServers.contains(physicalServer))
+			listPhyServers.add(physicalServer);
 		// add physical serer switch - gia switch
 		SubstrateSwitch s = new SubstrateSwitch(physicalServer.getName(), 0, false);
 		listPhySwitch.add(s);
@@ -215,11 +218,11 @@ public class Topology  {
 	}
 
 
-	public Map<Integer, PhysicalServer> getListPhyServers() {
+	public LinkedList<PhysicalServer> getListPhyServers() {
 		return listPhyServers;
 	}
 
-	public void setListPhyServers(Map<Integer, PhysicalServer> listPhyServers) {
+	public void setListPhyServers(LinkedList<PhysicalServer> listPhyServers) {
 		this.listPhyServers = listPhyServers;
 	}
 	public LinkedList<SubstrateLink> getLinkBandwidth()
@@ -284,15 +287,15 @@ public class Topology  {
 		return listPhySwitch;
 	}
 	
-	public double getCPURes()
-	{
-		double totalCPU = 0;
-		for(Entry<Integer, PhysicalServer> entry: listPhyServers.entrySet())
-		{
-			totalCPU += entry.getValue().getUsedCPUServer(); //get usedCPU
-		}
-		return totalCPU;
-	}
+//	public double getCPURes()
+//	{
+//		double totalCPU = 0;
+//		for(Entry<Integer, PhysicalServer> entry: listPhyServers.entrySet())
+//		{
+//			totalCPU += entry.getValue().getUsedCPUServer(); //get usedCPU
+//		}
+//		return totalCPU;
+//	}
 	public double getLinkBandwidthTopo()
 	{
 		
@@ -342,15 +345,15 @@ public class Topology  {
 		}
 	}
 	
-	public void setCPUServer(int i) {
-		for(PhysicalServer phy : this.listPhyServers.values()) {
-			//phy.resetCPU();
-			phy.setUsedCPUServer(i*5);
-		}
-	}
+//	public void setCPUServer(int i) {
+//		for(PhysicalServer phy : this.listPhyServers.values()) {
+//			//phy.resetCPU();
+//			phy.setUsedCPUServer(i*5);
+//		}
+//	}
 	public double getCPUServerUtilization() {
 		double average = 0.0;
-		for(PhysicalServer phy : this.listPhyServers.values()) {
+		for(PhysicalServer phy : this.listPhyServers) {
 			//phy.resetCPU();
 			average += phy.getUsedCPUServer();
 		}
@@ -359,7 +362,7 @@ public class Topology  {
 	
 	public int getServerUsed() {
 		int serverUsed = 0;
-		for(PhysicalServer phy : this.listPhyServers.values()) {
+		for(PhysicalServer phy : this.listPhyServers) {
 			//phy.resetCPU();
 			if(phy.getUsedCPUServer() != 0)
 				serverUsed ++;
@@ -382,5 +385,11 @@ public class Topology  {
 		
 		}
 		return totalLinkUsage/(1.0*linkIndex*1024);
+	}
+	public LinkedList<Rpi> getListRPi() {
+		return listRpi;
+	}
+	public void setListRPi(LinkedList<Rpi> listRPi) {
+		this.listRpi = listRPi;
 	}
 }

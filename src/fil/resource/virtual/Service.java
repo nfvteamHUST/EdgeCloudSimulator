@@ -12,21 +12,22 @@ public class Service {
 
 	private int piBelong;
 	private String serviceType;
-	private double cpu;
 	private double bandwidth;
 	private double power;
 	private int requestID;
-	private String sfcID;
+	private int sfcID;
 	private boolean belongToEdge;
 	private PhysicalServer belongToServer;
 	private double cpu_pi;
 	private double cpu_server;
+	private String status;
+	private int serviceID;
 	
 	public Service() {
-		this.cpu = 0;
 		this.setRequestID(0);
 		this.setBelongToEdge(true);
 		this.setBelongToServer(null);
+		this.setStatus("unassigned");
 	}
 	
 	public double getCpu_pi() {
@@ -45,14 +46,16 @@ public class Service {
 		this.cpu_server = cpu_server;
 	}
 
-	public double getCPU() {
-		return cpu;
+	public Service getServiceOfType(int type) {
+		Service service = new Service();
+		switch(type) {
+			case 2: service = new Decode(); break;
+			case 3: service = new Density(); break;
+			case 4: service = new Receive(); break;
+			default: throw new java.lang.Error("Service unknown - ServiceMapping");
+		}
+		return service;
 	}
-
-	public void setCPU(double cPU) {
-		cpu = cPU;
-	}
-
 	public int getRequestID() {
 		return requestID;
 	}
@@ -88,11 +91,11 @@ public class Service {
 		this.power = power;
 	}
 
-	public String getSfcID() {
+	public int getSfcID() {
 		return sfcID;
 	}
 
-	public void setSfcID(String sfcID) {
+	public void setSfcID(int sfcID) {
 		this.sfcID = sfcID;
 	}
 
@@ -118,6 +121,22 @@ public class Service {
 
 	public void setPiBelong(int piBelong) {
 		this.piBelong = piBelong;
+	}
+
+	public String getStatus() {
+		return status;
+	}
+
+	public void setStatus(String status) {
+		this.status = status;
+	}
+
+	public int getServiceID() {
+		return serviceID;
+	}
+
+	public void setServiceID(int serviceID) {
+		this.serviceID = serviceID;
 	}
 
 }

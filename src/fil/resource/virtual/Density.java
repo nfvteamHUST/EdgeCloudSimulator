@@ -1,7 +1,7 @@
 package fil.resource.virtual;
 
 public class Density extends Service {
-	public Density(String sfcID, int piBelong) {
+	public Density(int sfcID, int piBelong) {
 		this.setSfcID(sfcID);
 		this.setPiBelong(piBelong);
 		this.setServiceType("density");
@@ -10,6 +10,8 @@ public class Density extends Service {
 		this.setBelongToEdge(true);
 		this.setBandwidth(0.6);
 		this.setPower(0.13);
+		this.setServiceID(3);
+
 	}
 	public Density() {
 		this.setServiceType("density");
@@ -19,5 +21,7 @@ public class Density extends Service {
 		this.setBelongToEdge(true);
 		this.setBandwidth(0.6);
 		this.setPower(0.13);
+		this.setServiceID(3);
+
 	}
 }

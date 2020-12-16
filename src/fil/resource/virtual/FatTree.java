@@ -4,9 +4,11 @@ package fil.resource.virtual;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.Map;
+import java.util.Random;
 import java.util.Map.Entry;
 
 import fil.resource.substrate.PhysicalServer;
+import fil.resource.substrate.Rpi;
 import fil.resource.substrate.SubstrateSwitch;
 
 /**
@@ -20,6 +22,7 @@ public class FatTree {
 	private int totalAgg = 0;
 	private int totalEdge = 0;
 	private int totalHost = 0;
+	private int totalEdgeHost = 0;
 
 	private Map<Integer, SubstrateSwitch> listEdgeSwitch;
 	private Map<Integer, Integer> listPhyConnectEdge;
@@ -91,7 +94,6 @@ public class FatTree {
 		totalAgg = k * k / 2;
 		totalEdge = k * k / 2;
 		totalHost = k * k * k / 4;
-
 		// add list Physical Server
 		for (int i = 1; i <= totalHost; i++) {
 			PhysicalServer server = new PhysicalServer(String.valueOf(i));
@@ -215,11 +217,13 @@ public class FatTree {
 			SubstrateSwitch swEdge = listEdgeSwitch.get(idEdge);
 			swEdge.getBandwidthPort().put(swPhy, (double) 0);
 		}
-
+		
+		
 		topo.setListAggConnectEdge(listAggConnectEdge);
 		topo.setListCoreConnectAgg(listCoreConnectAgg);
 		topo.setListEdgeSwitchInPod(listPod);
 		topo.setListAggSwitchInPod(listPodAgg);
+		
 		return topo;
 	}
 
@@ -264,6 +268,14 @@ public class FatTree {
 
 	public void setListCoreSwitch(Map<Integer, SubstrateSwitch> listCoreSwitch) {
 		this.listCoreSwitch = listCoreSwitch;
+	}
+
+	public int getTotalEdgeHost() {
+		return totalEdgeHost;
+	}
+
+	public void setTotalEdgeHost(int totalEdgeHost) {
+		this.totalEdgeHost = totalEdgeHost;
 	}
 
 }

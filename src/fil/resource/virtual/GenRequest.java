@@ -9,7 +9,7 @@ import fil.resource.virtual.PoissonDistribution;
 
 public class GenRequest {
 	final static double LIVETIME = 0.5;
-	final static int COF = 6; //5 for full 24h option //3 for not-full option
+	final static int COF = 6; //6 for full 24h option //3 for not-full option
 	final static int PINUMBER = 300;
 	private PoissonDistribution number;
 //	private int [] LUT = {32,26,22,20,20,21,23,27,37,55,89,143,211,284,335,350,337,308,282,267,263,264,269,273,
@@ -47,7 +47,7 @@ public class GenRequest {
 		Map<Integer,HashMap<Integer,LinkedList<Double>>> allRequest = new HashMap<>();
 		
 		for(int req = 0; req < size; req++) { // size = # of requests
-			//int numChain = number.sample(LUT[req]) + 1;
+//			int numChain = number.sample(LUT[req]) + 1;
 //			int numChain = (int)(LUT[req]*700); // non-24h
 			int numChain = LUT[req]*COF; //full 24h
 //			int chainSupply = (int) Math.ceil(numChain*1.0/PINUMBER); // equally separate request

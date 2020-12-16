@@ -92,7 +92,7 @@ public class RESCE  {
 		Capture capture = new Capture();
 		Decode decode = new Decode();
 		Density density = new Density();
-		ReceiveDensity receive = new ReceiveDensity();
+		Receive receive = new Receive();
 		
 		//<---- count VNF migration
 		
@@ -104,12 +104,12 @@ public class RESCE  {
 			while (doneFlag == false) {////////////////////TRIAL LOOP////////////////////////
 				
 	
-				if (listSFConRpi.size() == 7) { // this Pi cannot map more chain
-					System.out.println("Pi number "+(pi.getId()+1)+" is overload\n");
-//					rejectPi = 1;
-					pi.setOverload(true); 
-					break;
-				}
+//				if (listSFConRpi.size() == 7) { // this Pi cannot map more chain
+//					System.out.println("Pi number "+(pi.getId()+1)+" is overload\n");
+////					rejectPi = 1;
+//					pi.setOverload(true); 
+//					break;
+//				}
 				
 				if(listChainRequest.size() == 0) {
 					System.out.println("Number of request equals zero");
@@ -156,18 +156,18 @@ public class RESCE  {
 						
 						for(int numSFC = 0; numSFC < numChainRequest; numSFC++) { // initialise SFC list
 							double endTime = listChainRequest.get(numSFC); // error after remapping numChain exceeds listChainSize
-							String sfcID = String.valueOf(SFCIndexIncrease);
-							SFC sfc = new SFC(sfcID, pi.getId(), endTime); 
-							sfc.setServicePosition(capture, true); // always at Rpi
-							sfc.setServicePosition(receive, false);// always at server
+//							String sfcID = String.valueOf(SFCIndexIncrease);
+							SFC sfc = new SFC(SFCIndexIncrease, pi.getId(), endTime); 
+							sfc.setServicePosition(capture.getServiceType(), true); // always at Rpi
+							sfc.setServicePosition(receive.getServiceType(), false);// always at server
 							if(numOffDecode < offDecode) {
-								sfc.setServicePosition(decode, false);
+								sfc.setServicePosition(decode.getServiceType(), false);
 							}
-							else sfc.setServicePosition(decode, true);
+							else sfc.setServicePosition(decode.getServiceType(), true);
 							if(numOffDensity < offDensity) {
-								sfc.setServicePosition(density, false);
+								sfc.setServicePosition(density.getServiceType(), false);
 							}
-							else sfc.setServicePosition(density, true);
+							else sfc.setServicePosition(density.getServiceType(), true);
 							
 							listSFCTemp.add(sfc);
 							SFCIndexIncrease++;
@@ -382,8 +382,9 @@ public class RESCE  {
 		LinkedList<Integer> listServerUsed = new LinkedList<Integer>();
 		LinkedList<Integer> totalChainSystem = new LinkedList<Integer>();
 		LinkedList<Integer> totalChainActive = new LinkedList<Integer>();
-		LinkedList<Integer> totalDecOffload = new LinkedList<Integer>();
-		LinkedList<Integer> totalDenOffload = new LinkedList<Integer>();
+		LinkedList<Integer> listDecInCloud = new LinkedList<Integer>();
+		LinkedList<Integer> listDenInCloud = new LinkedList<Integer>();
+		LinkedList<Integer> listReceiveInCloud = new LinkedList<Integer>();
 		LinkedList<Integer> totalChainReject = new LinkedList<Integer>();
 		LinkedList<Double> totalLoadEdge = new LinkedList<Double>();
 		LinkedList<Double> totalBwEdge = new LinkedList<Double>();
@@ -398,20 +399,28 @@ public class RESCE  {
 		LinkedList<Double> capacityEdge = new LinkedList<Double>();
 		LinkedList<Double> capacityCloud = new LinkedList<Double>();
 		
-		Map<Integer, LinkedList<Integer>> listRequestForEachPi = new HashMap<>();
-		Map<Integer, LinkedList<Integer>> listLeaveForEachPi = new HashMap<>();
+		Map<Integer, LinkedList<Double>> listStoreValue = new HashMap<>();
+		for(int i = 0; i < timeWindow.size(); i ++) {
+			listStoreValue.put(i,new LinkedList<Double>());
+		}
+		
+		Map<Integer, LinkedList<Integer>> listLeaveTotal = new HashMap<>();
 		Map<Integer, LinkedList<Integer>> listOffForEachPi_temp = new HashMap<>();
 		Map<Integer, LinkedList<Integer>> listOffForEachPi = new HashMap<>();
 		Map<Integer, LinkedList<Double>> listCPUForEachPi = new HashMap<>();
 		Map<Integer, LinkedList<Double>> listBWForEachPi = new HashMap<>();
+		Map<Integer, LinkedList<Double>> listCpuEdgePerSFC = new HashMap<>();
+		Map<Integer, LinkedList<Double>> listBWPerSFC = new HashMap<>();
 		
 		for(int i = 0; i < NUM_PI; i++) {
-			listRequestForEachPi.put(i,new LinkedList<Integer>());
-			listLeaveForEachPi.put(i,new LinkedList<Integer>());
+			
+			listLeaveTotal.put(i,new LinkedList<Integer>());
 			listOffForEachPi_temp.put(i, new LinkedList<Integer>());
 			listOffForEachPi.put(i, new LinkedList<Integer>());
 			listCPUForEachPi.put(i, new LinkedList<Double>());
 			listBWForEachPi.put(i, new LinkedList<Double>());
+			listCpuEdgePerSFC.put(i, new LinkedList<Double>());
+			listBWPerSFC.put(i, new LinkedList<Double>());
 		}
 		
 //		double [] sumBwNumPi = new double [timeWindow.size()];
@@ -424,22 +433,40 @@ public class RESCE  {
 	
 		
 		LinkedList<Integer> requestRandomReceive = new LinkedList<>();
+//		LinkedList<Double> storeCurrentDen = new LinkedList<>();
+//		storeCurrentDen.add(0.0);
+//		LinkedList
 		
 		//<------REQUEST_LOOP
 		while (requestIndex < timeWindow.size()) { //////////////////////////////////////////////////////////////////////////////////////////
+			// store value in order: arrival -cpuPerSFC (b4) - bwPerSFC (b4) - # vnf in system  - target: join vnf
+			LinkedList<Double> storeValue = new LinkedList<>();
+			// store "current" time
+			storeValue.add((double)requestIndex);
+			// store "next" arrival rate
+			storeValue.add((double)timeWindow.get(requestIndex));
+			// store "current" cpuEdge, bwEdge
+			storeValue.add(mappingServer.cpuEdgePerSFC());
+			storeValue.add(mappingServer.bwEdgePerSFC());
+//			 store "current" number of VNF in the system
+			storeValue.add((double)mappingServer.getNumServiceInCloud("receive"));
+			// store "leave" number of VNF in the system
+//			storeNumDen.add((double)mappingServer.getNumServiceInCloud("density"));
+			
 			HashMap<Integer,LinkedList<Double>> listRequestPi = listRequest.get(requestIndex);
+			int numSFCLevThisTW = 0;
+			int numDenLevThisTW = 0;
+			int numSerJoinCloud = 0;
 			int numPiReceive = 0; // number of Pi receives request > 0
 			int piAccept = 0;
 			int numSFCReqThisTW = 0;
 			int numMapReqThisTW = 0;
-						LinkedList<Double> loadEdgeNumPi = new LinkedList<>();
+			LinkedList<Double> loadEdgeNumPi = new LinkedList<>();
 			LinkedList<Double> bwEdgeNumPi = new LinkedList<>();			
 		
 			for (Entry<Integer, LinkedList<Double>> entry : listRequestPi.entrySet()) { //change i < 1 to i < num_pi for mapping every pi/////////////////////////////////
 				Rpi pi = listRpi.get(entry.getKey());
 				int numSFCReqThisPi = entry.getValue().size();
-				int numSFCLevThisPi = 0;
-				listRequestForEachPi.get(pi.getId()).add(numSFCReqThisPi);
 				numSFCReqThisTW += numSFCReqThisPi;
 
 				if (numSFCReqThisPi != 0)
@@ -462,7 +489,7 @@ public class RESCE  {
 						if(sfc.getEndTime() <= requestIndex) {
 							flagLeave = true;
 							listSFCLeave.add(sfc);
-							numSFCLevThisPi ++;
+							numSFCLevThisTW ++;
 						}
 					}
 					
@@ -479,6 +506,10 @@ public class RESCE  {
 						
 						//<-----------remap leftover SFC
 						for(SFC sfc : listSFCLeave) {
+							for(Service ser : sfc.getListService()) {
+								if(!ser.isBelongToEdge() && ser.getServiceType() == "density")
+									numDenLevThisTW ++;
+							}
 							if(listCurSFCOnPi.contains(sfc))
 								listCurSFCOnPi.remove(sfc);
 						}
@@ -508,7 +539,7 @@ public class RESCE  {
 					}
 				}
 				else ;
-				listLeaveForEachPi.get(pi.getId()).add(numSFCLevThisPi);
+//				listLeaveForEachPi.get(pi.getId()).add(numSFCLevThisPi);
 				//<------------JOIN --PROCESS
 				System.out.println("Start joining process ....");
 				LinkedList<Double> listEndTime = new LinkedList<>();
@@ -537,6 +568,8 @@ public class RESCE  {
 //					
 //					rejectRouting = networkRouting.NetworkRun(edgePosition.get(position), listSFCFinal, listRpi.get(pi));
 					mappingServer.runMapping(listSFCFinalPi, topo);
+					//<------finalize after remapping 
+					listCurSFCOnPi.addAll(mappingServer.getListSFC());
 					//<------set value for Rpi after mapping successfully
 					Double cpuEdgeUsage = 0.0;
 					Double bwEdgeUsage = 0.0;
@@ -548,6 +581,14 @@ public class RESCE  {
 					pi.setUsedBandwidth(bwEdgeUsage); //change Bandwidth used by Pi
 	
 					numMapReqThisTW += mappingServer.getListSFC().size();
+					
+					// store number of VNF joins to the Cloud
+					for(SFC sfc : mappingServer.getListSFC()) {
+						for(Service ser : sfc.getListService()) {
+							if(ser.getServiceType() == "density" && !ser.isBelongToEdge())
+								numSerJoinCloud ++;
+						}
+					}
 					piAccept ++; //num of accepted Pi (accept if at least 1 SFC has been mapped
 				}
 				
@@ -555,12 +596,16 @@ public class RESCE  {
 				loadEdgeNumPi.add(pi.getUsedCPU());
 				bwEdgeNumPi.add(pi.getUsedBandwidth());		
 				int offServiceCur = 0;
+
 				for(SFC sfc : listCurSFCOnPi) {
-					if(sfc.getService(2).getBelongToEdge() == false)
+					if(sfc.getService(2).getBelongToEdge() == false) {
 						offServiceCur ++;
-					if(sfc.getService(3).getBelongToEdge() == false)
+					}
+					if(sfc.getService(3).getBelongToEdge() == false) {
 						offServiceCur ++;
+					}
 				}
+
 				listOffForEachPi_temp.get(pi.getId()).add(offServiceCur);
 				if(requestIndex == 0) {
 					listOffForEachPi.get(pi.getId()).add(offServiceCur);
@@ -576,12 +621,46 @@ public class RESCE  {
 				
 			} //end Rpi for loop
 			
+			// store "next" leave value for ML model
+//			storeValue.add((double)numSFCLevThisTW);
+//			 store "next" VNF number in Cloud: Target value
+//			storeCurrentDen.add((double)mappingServer.getNumServiceInCloud("density"));
+//			storeValue.add(storeCurrentDen.get(requestIndex + 1) - storeCurrentDen.get(requestIndex));
+			storeValue.add((double)mappingServer.getNumServiceInCloud("receive"));
+			//			storeValue.add((double)numSerJoinCloud);
+			//store "next" VNF number leave in Cloud: Target
+//			storeValue.add((double)numDenLevThisTW);
+			listStoreValue.put(requestIndex, storeValue);
+			//<------Number of service Decode Density Receive in Cloud
+			
+			int numDenInCloud = 0;
+			int numDecInCloud = 0;
+			int numReceiveInCloud = 0;
+			
+			for(SFC sfc : mappingServer.getListSFCTotal()) {
+				if(sfc.getService(2).getBelongToEdge() == false) {
+					numDecInCloud ++;
+				}
+				if(sfc.getService(3).getBelongToEdge() == false) {
+					numDenInCloud ++;
+				}
+				if(sfc.getService(4).getBelongToEdge() == false) {
+					numReceiveInCloud ++;
+				}
+			}
+			
+			listDecInCloud.add(numDecInCloud);
+			listDenInCloud.add(numDenInCloud);
+			listReceiveInCloud.add(numReceiveInCloud);
+			
 			double sumCPUPi = 0.0;
 			double sumBwPi = 0.0;
+			
 			for (int index = 0; index < NUM_PI; index++) {
 				sumCPUPi += listRpi.get(index).getUsedCPU();
 				sumBwPi += listRpi.get(index).getUsedBandwidth();
 			}
+			
 			totalLoadEdge.add(requestIndex,(sumCPUPi/(NUM_PI)));
 			totalBwEdge.add(requestIndex,(sumBwPi/NUM_PI));
 			
@@ -591,7 +670,7 @@ public class RESCE  {
 			totalChainAcceptance.add(requestIndex, acceptance);
 			totalPiAcceptance.add(requestIndex, acceptancePi);
 			totalChainRequest.add(numMapReqThisTW);
-		// calculate average bandwidth usage
+			//<------calculate average bandwidth usage
 			double totalBandwidthSFC = 0;
 			double totalSFCSize = 0;
 			for(Entry<Rpi, LinkedList<SFC>>  entry : listSFConRpi.entrySet()) {
@@ -605,7 +684,7 @@ public class RESCE  {
 			serverUtilization.add(topo.getCPUServerUtilization());
 			listServerUsed.add(topo.getServerUsed());
 			totalChainActive.add(mappingServer.getListSFCTotal().size());
-			totalPowerSystem.add( mappingServer.getPower() + mappingServer.PowerEdgeUsage() + NUM_PI*1.28);
+			totalPowerSystem.add( mappingServer.getPower() + mappingServer.PowerEdgeUsage());
 			
 			//<-------calculate system capacity block
 			double cpuEdge = 0;
@@ -622,34 +701,35 @@ public class RESCE  {
 			capacityEdge.add(usedCapacityEdge);
 			capacityCloud.add(usedCapacityCloud);
 			capacity.add(usedCapacity);
+//			linkUsagePerSFC.add(mappingServer.linkUsagePerSFC());
 			cpuEdgeUsagePerSFC.add(mappingServer.cpuEdgePerSFC());
 			cpuServerUsagePerSFC.add(mappingServer.cpuServerPerSFC());
 			//<------consolidation block
-//			LinkedList<SFC> listSFCTotal = new LinkedList<>();			
-//			
-//			for(Entry<Rpi, LinkedList<SFC>> entry : listSFConRpi.entrySet()) {
-//				LinkedList<SFC> listSFCRpi = entry.getValue();
-//				for(SFC sfc : listSFCRpi) {
-//					sfc.resetSFC();
-//					listSFCTotal.add(sfc);
-//				}
-//			}
-//			int listSFCTotalSize = 	listSFCTotal.size();
-//			topo = new Topology();
-//			fatTree = new  FatTree();
-//			topo = fatTree.genFatTree(K_PORT_SWITCH);
-//			mappingServer = new MappingServer();
-//			mappingServer.runMapping(listSFCTotal, topo);
-//			if(mappingServer.getListSFC().size() < listSFCTotalSize)
-//				throw new java.lang.Error("Error occurs in consolidation block.");
-//
-//			totalPowerSystemConso = totalPowerEdge_temp + mappingServer.getPower();
-//			Double totalPowerPerSFC_temp = (totalPowerSystemConso*1.0)/(totalChainActive_temp*1.0);
-//			totalPowerPerSFC.add(totalPowerPerSFC_temp);
-//			totalEdgePowerSystem.add(totalPowerEdge_temp);
+			LinkedList<SFC> listSFCTotal = new LinkedList<>();			
+			
+			for(Entry<Rpi, LinkedList<SFC>> entry : listSFConRpi.entrySet()) {
+				LinkedList<SFC> listSFCRpi = entry.getValue();
+				for(SFC sfc : listSFCRpi) {
+					sfc.resetSFC();
+					listSFCTotal.add(sfc);
+				}
+			}
+			int listSFCTotalSize = 	listSFCTotal.size();
+			topo = new Topology();
+			fatTree = new  FatTree();
+			topo = fatTree.genFatTree(K_PORT_SWITCH);
+			mappingServer = new MappingServer();
+			mappingServer.runMapping(listSFCTotal, topo);
+			if(mappingServer.getListSFC().size() < listSFCTotalSize)
+				throw new java.lang.Error("Error occurs in consolidation block.");
+
+			double totalPowerSystemConso = mappingServer.PowerEdgeUsage() + mappingServer.getPower();
+			double totalPowerPerSFC_temp = (totalPowerSystemConso*1.0)/(mappingServer.getListSFCTotal().size()*1.0);
+			totalPowerPerSFC.add(totalPowerPerSFC_temp);
+//			totalEdgePowerSystem.add(mappingServer.PowerEdgeUsage());
 //			totalServerPowerSystem.add( mappingServer.getPower());
-//			totalPowerSystemConsolidation.add(totalPowerSystemConso);
-//			listLinkUsage.add(mappingServer.linkUsagePerSFC());
+			totalPowerSystemConsolidation.add(totalPowerSystemConso);
+			listLinkUsage.add(mappingServer.linkUsagePerSFC());
 //			//===add more VNF migration after consolidate===//
 //			numVNFMigration += (mappingServer.getListSFC().size()*4); // 4 for 4 VNF in total
 //			numVNFMigration += mappingServer.getNumVNFMigration();
@@ -670,45 +750,47 @@ public class RESCE  {
 //		}
 		
 		try {
-			write_double("./PlotFIL/totalPiAcceptanceOP.txt",totalPiAcceptance);
-			write_double("./PlotFIL/capacityOP.txt",capacity);
-			write_double("./PlotFIL/capacityEdgeOP.txt",capacityEdge);
-			write_double("./PlotFIL/capacityCloudOP.txt",capacityCloud);
-			write_double("./PlotFIL/averageBWUsageOP.txt",averageBWUsage);
-//			write_double("./PlotFIL/cpuServerUsedOP.txt",cpuServerUsed);
-			write_double("./PlotFIL/totalPowerSystemConsolidationOP.txt",totalPowerSystemConsolidation);
-			write_double("./PlotFIL/listLinkUsageOP.txt",listLinkUsage);
-			write_double("./PlotFIL/cpuEdgeUsagePerSFCOP.txt",cpuEdgeUsagePerSFC);
-			write_double("./PlotFIL/cpuServerUsagePerSFCOP.txt",cpuServerUsagePerSFC);
-//			write_double("./PlotFIL/linkBandwidthOP.txt",linkBandwidth);
-			write_double("./PlotFIL/serverUtilizationOP.txt",serverUtilization);
-			write_integer("./PlotFIL/NumVNFMigrationOP.txt",listVNFmigration);
-//			write_integer("./PlotFIL/NumServiceDecDenOP.txt",NumServiceDecDen);
-			write_integer("./PlotFIL/totalChainLeaveOP.txt",totalChainLeave);
-			write_integer("./PlotFIL/listServerUsedOP.txt",listServerUsed);
-			write_integer("./PlotFIL/requestRandomOP.txt",requestRandomReceive);
-			write_integer("./PlotFIL/totalDecOffloadOP.txt",totalDecOffload);
-			write_integer("./PlotFIL/totalDenOffloadOP.txt",totalDenOffload);
-			write_double("./PlotFIL/totalPowerSystemOP.txt",totalPowerSystem);
-			write_double("./PlotFIL/totalPowerSystemPerSFCOP.txt",totalPowerPerSFC);
-//			write_double("./PlotFIL/totalEdgePowerSystemOP.txt", totalEdgePowerSystem);
-//			write_double("./PlotFIL/totalServerPowerSystemOP.txt", totalServerPowerSystem);
-			write_double("./PlotFIL/totalLoadEdgeOP.txt",totalLoadEdge);
-			write_double("./PlotFIL/totalBwEdgeOP.txt",totalBwEdge);
-			write_double("./PlotFIL/totalChainAcceptanceOP.txt",totalChainAcceptance);
-//			write_double("./PlotFIL/sumLoadNumPiOP.txt", sumLoadNumPi);
-//			write_double("./PlotFIL/sumBwNumPiOP.txt", sumBwNumPi);
-			write_integer("./PlotFIL/totalChainSystemOP.txt",totalChainSystem);
-			write_integer("./PlotFIL/totalChainActiveOP.txt",totalChainActive);
-			write_integer("./PlotFIL/totalChainRejectOP.txt",totalChainReject);
-//			write_integer("./PlotFIL/numChainRequestOP.txt",numChainRequest);
-//			write_integer("./PlotFIL/numChainAcceptOP.txt",numChainAccept);
-			write_excel("./PlotFIL/requestEachPiDetail.xlsx",listRequestForEachPi);
-			write_excel("./PlotFIL/leaveEachPiDetail.xlsx",listLeaveForEachPi);
-			write_excel("./PlotFIL/offSerEachPi01.xlsx",listOffForEachPi);
-			write_excel_double("./PlotFIL/cpuEachPi01.xlsx",listCPUForEachPi);
-			write_excel_double("./PlotFIL/bwEachPi01.xlsx",listBWForEachPi);
-
+			write_double("./PlotRESCE/totalPiAcceptance.txt",totalPiAcceptance);
+			write_double("./PlotRESCE/capacity.txt",capacity);
+			write_double("./PlotRESCE/capacityEdge.txt",capacityEdge);
+			write_double("./PlotRESCE/capacityCloud.txt",capacityCloud);
+			write_double("./PlotRESCE/averageBWUsage.txt",averageBWUsage);
+//			write_double("./PlotRESCE/cpuServerUsedOP.txt",cpuServerUsed);
+			write_double("./PlotRESCE/totalPowerSystemConsolidation.txt",totalPowerSystemConsolidation);
+//			write_double("./PlotRESCE/listLinkUsage.txt",linkUsagePerSFC);
+			write_double("./PlotRESCE/cpuEdgeUsagePerSFC.txt",cpuEdgeUsagePerSFC);
+			write_double("./PlotRESCE/cpuServerUsagePerSFC.txt",cpuServerUsagePerSFC);
+//			write_double("./PlotRESCE/linkBandwidthOP.txt",linkBandwidth);
+			write_double("./PlotRESCE/serverUtilization.txt",serverUtilization);
+			write_integer("./PlotRESCE/NumVNFMigration.txt",listVNFmigration);
+//			write_integer("./PlotRESCE/NumServiceDecDenOP.txt",NumServiceDecDen);
+			write_integer("./PlotRESCE/totalChainLeave.txt",totalChainLeave);
+			write_integer("./PlotRESCE/listServerUsed.txt",listServerUsed);
+			write_integer("./PlotRESCE/requestRandom.txt",requestRandomReceive);
+			write_integer("./PlotRESCE/totalDecOffload.txt",listDecInCloud);
+			write_integer("./PlotRESCE/totalDenOffload.txt",listDenInCloud);
+			write_integer("./PlotRESCE/totaReceiveOffload.txt",listReceiveInCloud);
+			write_double("./PlotRESCE/totalPowerSystem.txt",totalPowerSystem);
+			write_double("./PlotRESCE/totalPowerSystemPerSFC.txt",totalPowerPerSFC);
+			
+//			write_double("./PlotRESCE/totalEdgePowerSystemOP.txt", totalEdgePowerSystem);
+//			write_double("./PlotRESCE/totalServerPowerSystemOP.txt", totalServerPowerSystem);
+			write_double("./PlotRESCE/totalLoadEdge.txt",totalLoadEdge);
+			write_double("./PlotRESCE/totalBwEdge.txt",totalBwEdge);
+			write_double("./PlotRESCE/totalChainAcceptance.txt",totalChainAcceptance);
+//			write_double("./PlotRESCE/sumLoadNumPiOP.txt", sumLoadNumPi);
+//			write_double("./PlotRESCE/sumBwNumPiOP.txt", sumBwNumPi);
+			write_integer("./PlotRESCE/totalChainSystem.txt",totalChainSystem);
+			write_integer("./PlotRESCE/totalChainActive.txt",totalChainActive);
+			write_integer("./PlotRESCE/totalChainReject.txt",totalChainReject);
+//			write_integer("./PlotRESCE/numChainRequestOP.txt",numChainRequest);
+//			write_integer("./PlotRESCE/numChainAcceptOP.txt",numChainAccept);
+//			write_excel("./PlotRESCE/requestEachPiDetail.xlsx",listRequestForEachPi);
+//			write_excel("./PlotRESCE/leaveEachPiDetail.xlsx",listLeaveForEachPi);
+//			write_excel("./PlotRESCE/offSerEachPi01.xlsx",listOffForEachPi);
+			write_excel_double("./PlotRESCE/listStoreValue.xlsx",listStoreValue);
+//			write_excel_double("./PlotRESCE/bwEachPi01.xlsx",listBWForEachPi);
+			System.out.println("Completed.");
 		} catch (IOException e) {
 			// TODO Auto-generated catch block
 			e.printStackTrace();

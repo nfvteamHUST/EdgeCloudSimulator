@@ -9,6 +9,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 
 import fil.resource.virtual.SFC;
+import fil.resource.virtual.Service;
 import fil.resource.virtual.Topology;
 
 public class MappingServer {
@@ -62,7 +63,8 @@ public class MappingServer {
 		} else {
 			System.out.println("Mapping on server returns zero success.");
 		}
-		this.setPower(serviceMapping.getPowerServer(topo) + linkMapping.getPower(topo));
+		this.setPower(serviceMapping.getPowerServer(topo));
+//		this.setPower(serviceMapping.getPowerServer(topo) + linkMapping.getPower(topo));
 	}
 	
 	
@@ -112,10 +114,11 @@ public class MappingServer {
 	}
 	public Double PowerEdgeUsage() { //for checking
 		Double power = 0.0;
+		int numPi = 300;
 		for(SFC sfc : this.listSFCTotal) {
 			power += sfc.powerEdgeUsage();
 		}
-		return power;
+		return power + numPi*1.28;
 	}
 	public Double cpuEdgeAllSFC() {
 		Double cpu = 0.0;
@@ -137,7 +140,15 @@ public class MappingServer {
 			cpuRatio += sfc.cpuEdgeUsage();
 		}
 		cpuRatio = cpuRatio/(1.0*this.listSFCTotal.size());
-		return cpuRatio*1.0/100;
+		return cpuRatio;
+	}
+	public Double bwEdgePerSFC() {
+		Double bw = 0.0;
+		for(SFC sfc : this.listSFCTotal) {
+			bw += sfc.bandwidthUsageOutDC();
+		}
+		bw = bw/(1.0*this.listSFCTotal.size());
+		return bw;
 	}
 	public Double cpuServerPerSFC() {
 		Double cpuRatio = 0.0;
@@ -168,6 +179,17 @@ public class MappingServer {
 	}
 	public LinkedList<SFC> getListSFCTotal() {
 		return listSFCTotal;
+	}
+	
+	public int getNumServiceInCloud(String type) {
+		int result = 0;
+		for(SFC sfc : listSFCTotal) {
+			for(Service ser : sfc.getListService()) {
+				if(ser.getServiceType() == type && !ser.isBelongToEdge())
+					result ++;
+			}
+		}
+		return result;
 	}
 
 	public void setListSFCTotal(LinkedList<SFC> listSFCTotal) {
